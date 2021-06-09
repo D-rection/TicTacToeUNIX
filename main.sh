@@ -8,9 +8,37 @@ opening_screen(){
 }
 
 menu_screen() {
-    clear
+    pointer="▶"
     DATA=`cat menu.screen`
-    printf '%s\n' "$DATA"
+    
+    choose=true
+    current_choose=0
+    cursor_y=23
+    cursor_x=83
+
+    while $choose
+    do
+        clear
+        printf '%s\n' "$DATA"
+        tput cup $cursor_y $cursor_x
+        echo "$pointer"
+        tput cup 55 0
+
+        read -r -sn1 t
+        case $t in
+            A) let "current_choose = (current_choose - 1)";
+                if [[ $current_choose -lt 0 ]]
+                then
+                    let "current_choose = 3 + current_choose"
+                fi;
+                let "cursor_y = 23 + 2 * current_choose";;
+            B) let "current_choose = (current_choose + 1) % 3";
+                let "cursor_y = 23 + 2 * current_choose";;
+            '')  ;;
+        esac
+    done
+    
+
 }
 
 hello_cycle(){
@@ -19,12 +47,18 @@ hello_cycle(){
 
 arrow_cycle(){
     choose=true
+    current_choose=0
     while $choose
     do
         read -r -sn1 t
         case $t in
-            A) echo up ;;
-            B) echo down ;;
+            A) let "current_choose = (current_choose - 1)";
+                if [[ $current_choose -lt 0 ]]
+                then
+                    let "current_choose = 3 + current_choose"
+                fi;
+                echo "up $current_choose" ;;
+            B) let "current_choose = (current_choose + 1) % 3" ; echo "down $current_choose"  ;;
             C) echo right ;;
             D) echo left ;;
             '') echo [CHOISE] ;;
@@ -34,9 +68,9 @@ arrow_cycle(){
 }
 
 
-# opening_screen
-# menu_screen
+opening_screen
+menu_screen
+
 # read -n 1 -s -r -p "Нажмите любую кнопку для продолжения"
-arrow_cycle
 echo
 exit 0
