@@ -8,6 +8,8 @@ opening_screen(){
 }
 
 menu_screen() {
+    opening_screen
+
     pointer="▶"
     DATA=`cat menu.screen`
     
@@ -50,7 +52,7 @@ tic_tac_toe(){
     
     step=1
     tchoose=true
-    field=(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    field=(0 0 0 0 0 0 0 0 0)
     end_game=true
     tcurrent_choose=0
     tcursor_x=80
@@ -60,6 +62,8 @@ tic_tac_toe(){
     do
         clear
         printf '%s\n' "$tDATA"
+        print_field
+        print_information
 
         tput cup $tcursor_y $tcursor_x
         echo "$tpointer"
@@ -98,53 +102,165 @@ tic_tac_toe(){
 }
 
 tchoose_checker() {
-    if [[ $field[{$tcurrent_choose}] -eq 0 ]]
+    if [[ ${field[$tcurrent_choose]} -eq 0 ]]
     then
-        $field[{$tcurrent_choose}]=$step
+        field[$tcurrent_choose]=$step
+        print_field
+        win_analizer
         if [[ $step -eq 1 ]]
         then
-            $step=2
+            step=2
         else
-            $step=1
+            step=1
         fi
     fi
 }
 
-print_field() {
-
-}
-
-analize_position() {
-
-}
-
-
 print_cross() {
-    let "printcross_x = tcursor_x - 4"
-    let "printcross_y = tcursor_y - 4"
-    while read USER
+    printcross_x=$1
+    printcross_y=$2
+    while IFS= read -r LINE
     do 
         tput cup $printcross_y $printcross_x
-        echo "$USER"
+        echo "$LINE"
         let "printcross_y = printcross_y + 1"
     done < cross.screen
 }
 
 
 print_circle() {
-    let "printcircle_x = tcursor_x - 4"
-    let "printcircle_y = tcursor_y - 4"
-    while read USER
+    printcircle_x=$1
+    printcircle_y=$2
+    while IFS= read -r LINE
     do 
-        tput cup $printcircle_y $printcircle_x
-        echo "$USER"
-        let "printcircle_y = printcircle_y + 1"
+        tput cup $printcircle_y $printcircle_x;
+        echo "$LINE";
+        let "printcircle_y = printcircle_y + 1" ;
     done < circle.screen
 }
 
+print_field() {
+    prcursor_x=76
+    prcursor_y=12
+    pr_counter=0
+    for i in ${field[@]}
+    do
+        if [[ $i -eq 1 ]]
+        then
+            let "x = prcursor_x + (pr_counter % 3) * 21"
+            let "y = prcursor_y + (pr_counter / 3) * 10"
+            print_cross $x $y
+        fi
+
+        if [[ $i -eq 2 ]]
+        then
+            let "x = prcursor_x + (pr_counter % 3) * 21"
+            let "y = prcursor_y + (pr_counter / 3) * 10"
+            print_circle $x $y
+        fi
+        let "pr_counter = pr_counter + 1"
+    done
+}
+
+print_information() {
+    tput cup 5 183
+    if [[ $step -eq 1 ]]
+    then
+        echo "Крестики"
+    else
+        echo "Нолики"
+    fi
+    tput cup 6 183
+    echo "Ваш ход"
+}
+
+print_endscreen() {
+    tput cup 45 94
+    case $1 in
+    0) echo "Ничья" ;;
+    1) echo "Крестики победили" ;;
+    2) echo "Нолики победили" ;;
+    esac
+    sleep 2
+}
+
+win_analizer(){
+    draw_end=0
+    for i in ${field[@]}
+    do
+        if [[ $i -eq 0 ]]
+        then
+            draw_end=1
+        fi
+    done
+    if [[ $draw_end -eq 0 ]]
+    then
+        tchoose=false
+        print_endscreen 0
+        return
+    fi
+    
+    # Horizontal 
+    if [[ ${field[0]} -eq $step ]] && [[ ${field[1]} -eq $step ]] && [[ ${field[2]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    if [[ ${field[3]} -eq $step ]] && [[ ${field[4]} -eq $step ]] && [[ ${field[5]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    if [[ ${field[6]} -eq $step ]] && [[ ${field[7]} -eq $step ]] && [[ ${field[8]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    # Vertical
+    if [[ ${field[0]} -eq $step ]] && [[ ${field[3]} -eq $step ]] && [[ ${field[6]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    if [[ ${field[1]} -eq $step ]] && [[ ${field[4]} -eq $step ]] && [[ ${field[7]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    if [[ ${field[2]} -eq $step ]] && [[ ${field[5]} -eq $step ]] && [[ ${field[8]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+
+    # Diagonal 
+    if [[ ${field[0]} -eq $step ]] && [[ ${field[4]} -eq $step ]] && [[ ${field[8]} -eq $step ]]
+    then
+    print_endscreen $step
+        tchoose=false
+        return
+    fi
+
+    if [[ ${field[2]} -eq $step ]] && [[ ${field[4]} -eq $step ]] && [[ ${field[6]} -eq $step ]]
+    then
+        tchoose=false
+        print_endscreen $step
+        return
+    fi
+}
 
 
-opening_screen
 menu_screen
 
 # read -n 1 -s -r -p "Нажмите любую кнопку для продолжения"
