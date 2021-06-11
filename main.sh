@@ -87,14 +87,15 @@ tic_tac_toe(){
 	echo "$tpointer"
 	tput cup 55 0
 
-	if "$your_move"
+	if $your_move
 	then
-		move
-		
+		move		
 	else
-
 		temp=$tcurrent_choose
+
 		read -a tcurrent_choose <<< $( cat pipe )
+        flush
+
 		if [[ $main_symbol -eq 1 ]]
 		then
 		    step=2
@@ -110,6 +111,7 @@ tic_tac_toe(){
 	fi
 	done
 }
+
 
 move(){
 	read -r -sn1 t
@@ -146,12 +148,12 @@ move(){
 tchoose_checker() {
     if [[ ${field[$tcurrent_choose]} -eq 0 ]]
     then
-	step=$main_symbol
-        field[$tcurrent_choose]=$step
-        print_field
-        win_analizer
-	echo "$tcurrent_choose" > pipe
-	your_move=false
+        step=$main_symbol
+            field[$tcurrent_choose]=$step
+            print_field
+            win_analizer
+        echo "$tcurrent_choose" > pipe
+        your_move=false
         
     fi
 }
@@ -211,7 +213,12 @@ print_information() {
         echo "Нолики"
     fi
     tput cup 6 183
-    echo "Ваш ход"
+    if $your_move
+    then
+        echo "Ваш ход"
+    else
+        echo "Ход противника"
+    fi
 }
 
 print_endscreen() {
@@ -300,11 +307,16 @@ win_analizer(){
     fi
 }
 
+flush(){
+  while read -N 1 -t 0.01
+  do :
+  done
+}
 
+
+wmctrl -r ':ACTIVE:' -b toggle,fullscreen
 menu_screen
-
-
 # read -n 1 -s -r -p "Нажмите любую кнопку для продолжения"
 rm pipe
-echo
+echo 
 exit 0
