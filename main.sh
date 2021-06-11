@@ -37,8 +37,8 @@ menu_screen() {
             B) let "current_choose = (current_choose + 1) % 3";
                 let "cursor_y = 23 + 2 * current_choose";;
             '')  case $current_choose in
-                    0) tic_tac_toe ;;
-                    1) ;;
+                    0) new_game ;;
+                    1) join_ ;;
                     2) choose=false ;;
                 esac
                 ;;
@@ -46,73 +46,113 @@ menu_screen() {
     done
 }
 
+new_game(){
+	if ! [[ -e pipe ]]
+	then
+		mknod pipe p	
+		
+	fi
+	your_move=true
+	main_symbol=1
+	tic_tac_toe
+}
+
+join_(){
+	your_move=false
+	main_symbol=2
+	tic_tac_toe
+}
+
+
 tic_tac_toe(){
-    tpointer="+"
-    tDATA=`cat tic.screen`
-    
-    step=1
-    tchoose=true
-    field=(0 0 0 0 0 0 0 0 0)
-    end_game=true
-    tcurrent_choose=0
-    tcursor_x=80
-    tcursor_y=15
-    
-    while $tchoose
-    do
-        clear
-        printf '%s\n' "$tDATA"
-        print_field
-        print_information
+	tpointer="+"
+	tDATA=`cat tic.screen`
 
-        tput cup $tcursor_y $tcursor_x
-        echo "$tpointer"
-        tput cup 55 0
+	tchoose=true
+	field=(0 0 0 0 0 0 0 0 0)
+	end_game=true
+	tcurrent_choose=0
+	tcursor_x=80
+	tcursor_y=15
 
-        read -r -sn1 t
-        case $t in
-            A) let "tcurrent_choose = tcurrent_choose - 3";
-                if [[ $tcurrent_choose -lt 0 ]]
-                then
-                    let "tcurrent_choose = 9 + tcurrent_choose"
-                fi;
-                let "y = tcurrent_choose / 3" ;
-                let "tcursor_y = 15 + 10 * y";;
+	while $tchoose
+	do
+	clear
+	printf '%s\n' "$tDATA"
+	step=$main_symbol
+	print_field
+	print_information
 
-            B)  let "tcurrent_choose = (tcurrent_choose + 3) % 9";
-                let "y = tcurrent_choose / 3" ;
-                let "tcursor_y = 15 + 10 * y";;
-            D)  let "tcurrent_choose = (tcurrent_choose - 1)";
-                if [[ $tcurrent_choose -lt 0 ]]
-                then
-                    let "tcurrent_choose = 9 + tcurrent_choose"
-                fi;
-                let "x = tcurrent_choose % 3" ;
-                let "tcursor_x = 80 + 21 * x";;
+	tput cup $tcursor_y $tcursor_x
+	echo "$tpointer"
+	tput cup 55 0
 
-            C)  let "tcurrent_choose = (tcurrent_choose + 1) % 9";
-                let "x = tcurrent_choose % 3" ;
-                let "tcursor_x = 80 + 21 * x";;
+	if "$your_move"
+	then
+		move
+		
+	else
 
-            '')  tchoose_checker ;;
+		temp=$tcurrent_choose
+		read -a tcurrent_choose <<< $( cat pipe )
+		if [[ $main_symbol -eq 1 ]]
+		then
+		    step=2
+		else
+		    step=1
+		fi
+		field[$tcurrent_choose]=$step
+		print_field
+		print_information
+		win_analizer
+		tcurrent_choose=$temp
+		your_move=true
+	fi
+	done
+}
 
-            'q') tchoose=false ;;
-        esac
-    done
+move(){
+	read -r -sn1 t
+	case $t in
+	    A) let "tcurrent_choose = tcurrent_choose - 3";
+		if [[ $tcurrent_choose -lt 0 ]]
+		then
+		    let "tcurrent_choose = 9 + tcurrent_choose"
+		fi;
+		let "y = tcurrent_choose / 3" ;
+		let "tcursor_y = 15 + 10 * y";;
+
+	    B)  let "tcurrent_choose = (tcurrent_choose + 3) % 9";
+		let "y = tcurrent_choose / 3" ;
+		let "tcursor_y = 15 + 10 * y";;
+	    D)  let "tcurrent_choose = (tcurrent_choose - 1)";
+		if [[ $tcurrent_choose -lt 0 ]]
+		then
+		    let "tcurrent_choose = 9 + tcurrent_choose"
+		fi;
+		let "x = tcurrent_choose % 3" ;
+		let "tcursor_x = 80 + 21 * x";;
+
+	    C)  let "tcurrent_choose = (tcurrent_choose + 1) % 9";
+		let "x = tcurrent_choose % 3" ;
+		let "tcursor_x = 80 + 21 * x";;
+
+	    '')  tchoose_checker ;;
+
+	    'q') tchoose=false ;;
+	esac
 }
 
 tchoose_checker() {
     if [[ ${field[$tcurrent_choose]} -eq 0 ]]
     then
+	step=$main_symbol
         field[$tcurrent_choose]=$step
         print_field
         win_analizer
-        if [[ $step -eq 1 ]]
-        then
-            step=2
-        else
-            step=1
-        fi
+	echo "$tcurrent_choose" > pipe
+	your_move=false
+        
     fi
 }
 
@@ -164,7 +204,7 @@ print_field() {
 
 print_information() {
     tput cup 5 183
-    if [[ $step -eq 1 ]]
+    if [[ $main_symbol -eq 1 ]]
     then
         echo "Крестики"
     else
@@ -263,6 +303,8 @@ win_analizer(){
 
 menu_screen
 
+
 # read -n 1 -s -r -p "Нажмите любую кнопку для продолжения"
+rm pipe
 echo
 exit 0
